@@ -32,7 +32,7 @@ public class Controller {
 
 	@SneakyThrows
 	@RequestMapping("/{userId}/jobs")
-	public List<Result> greeting(@PathVariable("userId") long userId,
+	public List<Result> getJobs(@PathVariable("userId") long userId,
 			@RequestParam(value = "orderBy", defaultValue = "!job.billRate,distance,job.startDate") String[] orderBy,
 			@RequestParam(value = "limit", defaultValue = "3") int limit) {
 

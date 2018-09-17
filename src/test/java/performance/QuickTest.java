@@ -33,7 +33,7 @@ public class QuickTest {
 
 	@SneakyThrows
 	private void executeAll(List<Task> tasks) {
-		
+
 		tasks.parallelStream().forEach(task -> {
 			do {
 				Result result = new Result();
@@ -54,7 +54,7 @@ public class QuickTest {
 				}
 			} while (task.isRetry());
 		});
-		
+
 		System.out.println("Done.");
 	}
 
