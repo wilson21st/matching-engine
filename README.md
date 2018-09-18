@@ -3,7 +3,7 @@
 * Built on Spring Boot 2.0.3
 * Java 8 Eclipse Jee Photon with Maven
 * There is only one RESTful GET API defined
-For example: /api/workers/{userId}/jobs?orderBy=distance,!job.billRate,job.jobId&limit=5
+For example: **/api/workers/{userId}/jobs?orderBy=distance,!job.billRate,job.jobId&limit=5**
 where:
     * url: /api/workers/{userId}/jobs
     * query1: orderBy
@@ -11,7 +11,7 @@ where:
         * A distance between the worker and job
         * An exclamation mark (!) indicates the field is in descending order. Default is in ascending order
         * e.g. orderBy=distance,!job.billRate,job.jobId will sort the list using the specified fields from left to right
-        * If not specified, default is !job.billRate,distance,job.startDate
+        * If not specified, default is **!job.billRate,distance,job.startDate**
     * query2: limit
         * The maximum number of the jobs returned. Default is 3
 * It returns an JSON array, of each object contains a distance in km, plus a copy of the job
@@ -26,7 +26,9 @@ where:
 * Many configuration params are hard-coded. Better if they are configured from property file
 * ElasticSearch or solr can be used for bigger data with more complex matching criteria
 
-# Response from API "http://localhost:8080/api/workers/0/jobs"
+# Response
+
+Url: **http://localhost:8080/api/workers/0/jobs**
 
 ```
 [
