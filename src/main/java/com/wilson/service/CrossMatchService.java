@@ -1,5 +1,6 @@
 package com.wilson.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,8 +18,6 @@ import com.wilson.model.Worker;
 import com.wilson.util.ComparatorBuilder;
 import com.wilson.util.Distance;
 
-import lombok.SneakyThrows;
-
 @Service
 public class CrossMatchService {
 
@@ -33,41 +32,49 @@ public class CrossMatchService {
 	// define thread pool
 	private final ForkJoinPool fastMatchPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 2);
 
-	@SneakyThrows
 	public List<Result> crossMatch(long userId, String[] orderBy, int limit) {
 
 		Worker worker = dataCacheService.getWorker(userId);
+
+		if (worker == null) {
+			return new ArrayList<>();
+		}
+
 		Set<Job> jobs = dataCacheService.getJobs();
 		Set<Result> results = ConcurrentHashMap.newKeySet();
 
-		double workerLatitude = worker.getJobSearchAddress().getLatitude();
-		double workerLongitude = worker.getJobSearchAddress().getLongitude();
+		try {
+			fastMatchPool.submit(() -> {
 
-		fastMatchPool.submit(() -> {
+				jobs.parallelStream().forEach(job -> {
 
-			jobs.parallelStream().forEach(job -> {
+					try {
 
-				try {
+						long distance = Distance.calculate(worker.getJobSearchAddress().getLatitude(),
+								worker.getJobSearchAddress().getLongitude(), job.getLocation().getLatitude(),
+								job.getLocation().getLongitude());
 
-					double jobLatitude = job.getLocation().getLatitude();
-					double jobLongitude = job.getLocation().getLongitude();
-					long distance = Distance.calculate(workerLatitude, workerLongitude, jobLatitude, jobLongitude);
+						// a job will be selected if the following criteria are met:
+						// certificates, driver license and distance
+						boolean checkCertificates = worker.getCertificates().containsAll(job.getRequiredCertificates());
+						boolean checkLicense = !job.isDriverLicenseRequired() || worker.isHasDriversLicense();
+						boolean checkDistance = distance <= worker.getJobSearchAddress().getMaxJobDistance();
 
-					// a job will be selected if the following criteria are met:
-					// certificates, driver license and distance
-					boolean checkCertificates = worker.getCertificates().containsAll(job.getRequiredCertificates());
-					boolean checkLicense = !job.isDriverLicenseRequired() || worker.isHasDriversLicense();
-					boolean checkDistance = distance <= worker.getJobSearchAddress().getMaxJobDistance();
+						if (checkCertificates && checkLicense && checkDistance) {
+							results.add(new Result(job, distance));
+						}
 
-					if (checkCertificates && checkLicense && checkDistance) {
-						results.add(new Result(job, distance));
+					} catch (Exception e) {
+
+						LOGGER.warn("Exception: ", e);
 					}
+				});
+			}).get();
 
-				} catch (Exception e) {
-					LOGGER.warn("Exception: ", e);
-				}
-			});
-		}).get();
+		} catch (Exception e) {
+
+			LOGGER.warn("Exception: ", e);
+		}
 
 		// sort results then apply limit
 		return results

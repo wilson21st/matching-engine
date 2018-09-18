@@ -16,7 +16,7 @@ public class ComparatorBuilder<T> {
 
 	// parameter: an array of field names
 	// return: a list of joined comparators
-	public Comparator<T> build(String... fieldNames) {
+	public Comparator<T> build(String[] fieldNames) {
 		Comparator<T> comparator = null;
 		for (String f : fieldNames) {
 			// descending order if ! is found
@@ -42,15 +42,15 @@ public class ComparatorBuilder<T> {
 			try {
 				// retrieve value from getter method if exists
 				// a dot indicates the field is in a nested class
-				Comparable c1 = (Comparable) invokeGetterMethod(o1, fieldName);
-				Comparable c2 = (Comparable) invokeGetterMethod(o2, fieldName);
+				Object c1 = invokeGetterMethod(o1, fieldName);
+				Object c2 = invokeGetterMethod(o2, fieldName);
 				if (c1 == null) {
 					return c2 == null ? 0 : Integer.MIN_VALUE;
 				}
 				if (c2 == null) {
 					return Integer.MAX_VALUE;
 				}
-				return c1.compareTo(c2);
+				return ((Comparable) c1).compareTo((Comparable) c2);
 
 			} catch (Exception e) {
 				LOGGER.debug("Exceiption: {}", e.getMessage());
@@ -59,7 +59,7 @@ public class ComparatorBuilder<T> {
 		};
 	}
 
-	private Object invokeGetterMethod(Object obj, String fieldName) {
+	private Object invokeGetterMethod(Object object, String fieldName) {
 
 		try {
 			// root: string before dot
@@ -69,18 +69,18 @@ public class ComparatorBuilder<T> {
 			// next: string after dot
 			String next = idx == -1 ? "" : fieldName.substring(idx + 1, fieldName.length());
 
-			PropertyDescriptor propertyDescriptor = new PropertyDescriptor(root, obj.getClass());
+			PropertyDescriptor propertyDescriptor = new PropertyDescriptor(root, object.getClass());
 			Method getter = propertyDescriptor.getReadMethod();
 
 			if (getter != null) {
-				Object object = getter.invoke(obj);
-				if (object != null && !StringUtils.isEmpty(next)) {
+				Object value = getter.invoke(object);
+				if (value != null && !StringUtils.isEmpty(next)) {
 					// recursively called if nested object is found
-					return invokeGetterMethod(object, next);
+					return invokeGetterMethod(value, next);
 				}
-				return object;
+				return value;
 			}
-			// object is not found
+			// value is not found
 
 		} catch (Exception e) {
 			LOGGER.debug("Exceiption: {}", e.getMessage());
