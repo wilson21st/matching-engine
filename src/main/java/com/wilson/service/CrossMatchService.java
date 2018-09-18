@@ -25,7 +25,7 @@ public class CrossMatchService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CrossMatchService.class);
 
 	@Autowired
-	private DataCacheService dataStoreService;
+	private DataCacheService dataCacheService;
 
 	@Autowired
 	private ComparatorBuilder<Result> comparatorBuilder;
@@ -36,9 +36,12 @@ public class CrossMatchService {
 	@SneakyThrows
 	public List<Result> crossMatch(long userId, String[] orderBy, int limit) {
 
-		Worker worker = dataStoreService.getWorker(userId);
-		Set<Job> jobs = dataStoreService.getJobs();
+		Worker worker = dataCacheService.getWorker(userId);
+		Set<Job> jobs = dataCacheService.getJobs();
 		Set<Result> results = ConcurrentHashMap.newKeySet();
+
+		double workerLatitude = worker.getJobSearchAddress().getLatitude();
+		double workerLongitude = worker.getJobSearchAddress().getLongitude();
 
 		fastMatchPool.submit(() -> {
 
@@ -46,15 +49,17 @@ public class CrossMatchService {
 
 				try {
 
+					double jobLatitude = job.getLocation().getLatitude();
+					double jobLongitude = job.getLocation().getLongitude();
+					long distance = Distance.calculate(workerLatitude, workerLongitude, jobLatitude, jobLongitude);
+
+					// a job will be selected if the following criteria are met:
+					// certificates, driver license and distance
 					boolean checkCertificates = worker.getCertificates().containsAll(job.getRequiredCertificates());
-					boolean checkDriverLicense = job.isDriverLicenseRequired() == false
-							|| job.isDriverLicenseRequired() == worker.isHasDriversLicense();
-					long distance = Distance.calculate(worker.getJobSearchAddress().getLatitude(),
-							worker.getJobSearchAddress().getLongitude(), job.getLocation().getLatitude(),
-							job.getLocation().getLongitude());
+					boolean checkLicense = !job.isDriverLicenseRequired() || worker.isHasDriversLicense();
 					boolean checkDistance = distance <= worker.getJobSearchAddress().getMaxJobDistance();
 
-					if (checkCertificates && checkDriverLicense && checkDistance) {
+					if (checkCertificates && checkLicense && checkDistance) {
 						results.add(new Result(job, distance));
 					}
 

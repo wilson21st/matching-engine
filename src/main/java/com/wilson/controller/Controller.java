@@ -17,12 +17,13 @@ public class Controller {
 
 	@Autowired
 	CrossMatchService crossMatchService;
-	
+
 	@RequestMapping("/{userId}/jobs")
 	public List<Result> getJobs(@PathVariable("userId") long userId,
 			@RequestParam(value = "orderBy", defaultValue = "!job.billRate,distance,job.startDate") String[] orderBy,
 			@RequestParam(value = "limit", defaultValue = "3") int limit) {
 
+//		LOGGER.info("getJobs: userId={} orderBy={} limit={}", userId, orderBy, limit);
 		return crossMatchService.crossMatch(userId, orderBy, limit);
 	}
 }

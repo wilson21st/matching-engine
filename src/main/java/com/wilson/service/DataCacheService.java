@@ -29,12 +29,12 @@ public class DataCacheService {
 
 	private static final String API_GET_WORKERS = "http://test.swipejobs.com/api/workers";
 	private static final String API_GET_JOBS = "http://test.swipejobs.com/api/jobs";
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(DataCacheService.class);
 
 	private final Map<Long, Worker> workers = new ConcurrentHashMap<>();
 	private final Set<Job> jobs = ConcurrentHashMap.newKeySet();
-	
+
 	@Autowired
 	HttpGetJson httpGetJson;
 
@@ -52,10 +52,11 @@ public class DataCacheService {
 	}
 
 	@Scheduled(fixedDelay = 60000)
-	private void syncData() {
+	private void synchronize() {
 
 		try {
-			// synchronous API requests to get all workers
+
+			// synchronous API request to get all workers
 			Worker[] newWorkers = httpGetJson.sendAndReceive(API_GET_WORKERS, Worker[].class);
 			// map them to a temporary map
 			Map<Long, Worker> tempWorkers = Arrays
@@ -66,7 +67,7 @@ public class DataCacheService {
 			workers.putAll(tempWorkers);
 			LOGGER.info("Workers fetched: size={}", workers.size());
 
-			// synchronous API requests to get all jobs
+			// synchronous API request to get all jobs
 			Job[] newJobs = httpGetJson.sendAndReceive(API_GET_JOBS, Job[].class);
 			jobs.clear();
 			jobs.addAll(Arrays.asList(newJobs));

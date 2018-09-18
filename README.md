@@ -51,7 +51,7 @@ Url: **http://localhost:8080/api/workers/0/jobs**
       "guid": "562f66aad42092ef776f7ccb",
       "jobId": 26
     },
-    "distance": 23.0
+    "distance": 23
   },
   {
     "job": {
@@ -72,7 +72,7 @@ Url: **http://localhost:8080/api/workers/0/jobs**
       "guid": "562f66aaa33cc26cdf48198f",
       "jobId": 35
     },
-    "distance": 25.0
+    "distance": 25
   }
 ]
 ```

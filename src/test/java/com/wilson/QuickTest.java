@@ -17,7 +17,7 @@ public class QuickTest {
 	public static void main(String[] args) {
 
 		List<Task> tasks = new ArrayList<>();
-		for (int i = 0; i < 500000; i++) {
+		for (int i = 0; i < 100; i++) {
 			int id = new Random().nextInt(50);
 			String url = String.format("http://localhost:8080/api/workers/%d/jobs", id);
 			tasks.add(new Task(url));
@@ -56,7 +56,7 @@ public class QuickTest {
 
 	private void record(Task task, Result result) {
 		String retry = task.isRetry() ? String.format(" retry=%d", task.getRetryNumber()) : "";
-		System.out.println(String.format("#%-6d time=%d%s url=%s response=%s", totalCount.incrementAndGet(),
+		System.out.println(String.format("id=%-6d time=%d%s url=%s response=%s", totalCount.incrementAndGet(),
 				result.getTimer().getTime(), retry, task.getUrl(), result.getResponse()));
 	}
 }
