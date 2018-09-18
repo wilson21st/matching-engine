@@ -27,4 +27,12 @@ public class HttpGetJson {
 		HttpRequest request = requestFactory.buildGetRequest(new GenericUrl(url));
 		return request.execute().parseAs(type);
 	}
+
+	@SneakyThrows
+	public static String sendAndReceive(String url) {
+		// simple HTTP client without error handling, e.g. retry or timeout
+		HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory();
+		HttpRequest request = requestFactory.buildGetRequest(new GenericUrl(url));
+		return request.execute().parseAsString();
+	}
 }

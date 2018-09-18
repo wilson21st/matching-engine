@@ -6,7 +6,6 @@ import java.util.Comparator;
 
 import org.apache.commons.lang3.StringUtils;
 
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -53,9 +52,8 @@ public class ComparatorBuilder {
 		};
 	}
 
-	@SneakyThrows
 	private static Object invokeGetterMethod(Object obj, String fieldName) {
-		
+
 		try {
 			// root: string before dot
 			int idx = fieldName.indexOf(".");

@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class Result {
 
-	private Object response;
+	private String response;
 	private Timer timer = new Timer();
 	private boolean isException = false;
 }

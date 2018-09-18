@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 
 import com.google.gson.reflect.TypeToken;
 
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import service.model.Job;
 import service.model.Worker;
@@ -58,7 +57,6 @@ public class DataStore extends TimerTask {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	@SneakyThrows
 	public void run() {
 
 		try {

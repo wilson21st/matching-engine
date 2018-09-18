@@ -70,7 +70,7 @@ public class Controller {
 		Collections.sort(sortedResults, comparator);
 
 		// return by limit
-		int cutoff = (int) Math.min(sortedResults.size(), limit);
+		int cutoff = Math.min(sortedResults.size(), limit);
 		sortedResults = sortedResults.subList(0, cutoff);
 		return sortedResults;
 	}

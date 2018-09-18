@@ -1,12 +1,9 @@
 package performance;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.LongAdder;
-
-import com.google.gson.reflect.TypeToken;
 
 import lombok.SneakyThrows;
 import service.util.HttpGetJson;
@@ -19,12 +16,10 @@ public class QuickTest {
 	public static void main(String[] args) {
 
 		List<Task> tasks = new ArrayList<>();
-		Type type = new TypeToken<Object>() {
-		}.getType();
-		for (int i = 0; i < 500000; i++) {
+		for (int i = 0; i < 50000; i++) {
 			int id = new Random().nextInt(50);
-			String url = String.format("http://localhost:8080/api/workers/%d/jobs?limit=50", id);
-			tasks.add(new Task(url, type));
+			String url = String.format("http://localhost:8080/api/workers/%d/jobs", id);
+			tasks.add(new Task(url));
 		}
 
 		QuickTest test = new QuickTest();
@@ -38,8 +33,8 @@ public class QuickTest {
 			do {
 				Result result = new Result();
 				try {
-					Object response = HttpGetJson.sendAndReceive(task.getUrl(), task.getType());
-					result.setResponse(response);
+					String json = HttpGetJson.sendAndReceive(task.getUrl());
+					result.setResponse(json);
 				} catch (Exception e) {
 					result.setException(true);
 					result.setResponse(e.getMessage());
