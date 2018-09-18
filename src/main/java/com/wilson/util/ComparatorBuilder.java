@@ -1,19 +1,22 @@
-package service.util;
+package com.wilson.util;
 
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.Comparator;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
-import lombok.extern.slf4j.Slf4j;
+@Component
+public class ComparatorBuilder<T> {
 
-@Slf4j
-public class ComparatorBuilder {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ComparatorBuilder.class);
 
 	// parameter: an array of field names
 	// return: a list of joined comparators
-	public static <T> Comparator<T> build(String... fieldNames) {
+	public Comparator<T> build(String... fieldNames) {
 		Comparator<T> comparator = null;
 		for (String f : fieldNames) {
 			// descending order if ! is found
@@ -26,6 +29,7 @@ public class ComparatorBuilder {
 			if (comparator == null) {
 				comparator = c;
 			} else {
+				// append comparator to the end
 				comparator = comparator.thenComparing(c);
 			}
 		}
@@ -33,9 +37,11 @@ public class ComparatorBuilder {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private static <T> Comparator<T> getComparator(String fieldName) {
+	private Comparator<T> getComparator(String fieldName) {
 		return (o1, o2) -> {
 			try {
+				// retrieve value from getter method if exists
+				// a dot indicates the field is in a nested class
 				Comparable c1 = (Comparable) invokeGetterMethod(o1, fieldName);
 				Comparable c2 = (Comparable) invokeGetterMethod(o2, fieldName);
 				if (c1 == null) {
@@ -45,14 +51,15 @@ public class ComparatorBuilder {
 					return Integer.MAX_VALUE;
 				}
 				return c1.compareTo(c2);
+
 			} catch (Exception e) {
-				log.info("Exceiption: {}", e.getMessage());
+				LOGGER.debug("Exceiption: {}", e.getMessage());
 			}
 			return 0;
 		};
 	}
 
-	private static Object invokeGetterMethod(Object obj, String fieldName) {
+	private Object invokeGetterMethod(Object obj, String fieldName) {
 
 		try {
 			// root: string before dot
@@ -67,17 +74,16 @@ public class ComparatorBuilder {
 
 			if (getter != null) {
 				Object object = getter.invoke(obj);
-				if (object != null) {
-					if (!StringUtils.isEmpty(next)) {
-						// recursively called if nested object is found
-						return invokeGetterMethod(object, next);
-					}
-					return object;
+				if (object != null && !StringUtils.isEmpty(next)) {
+					// recursively called if nested object is found
+					return invokeGetterMethod(object, next);
 				}
+				return object;
 			}
+			// object is not found
 
 		} catch (Exception e) {
-			log.info("Exceiption: {}", e.getMessage());
+			LOGGER.debug("Exceiption: {}", e.getMessage());
 		}
 		return null;
 	}

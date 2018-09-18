@@ -1,6 +1,6 @@
-package service.util;
+package com.wilson.util;
 
-import java.lang.reflect.Type;
+import org.springframework.stereotype.Component;
 
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpRequest;
@@ -13,23 +13,24 @@ import com.google.api.client.json.jackson2.JacksonFactory;
 
 import lombok.SneakyThrows;
 
+@Component
 public class HttpGetJson {
 
 	private static final HttpTransport HTTP_TRANSPORT = new NetHttpTransport();
 	private static final JsonFactory JSON_FACTORY = new JacksonFactory();
 
 	@SneakyThrows
-	public static Object sendAndReceive(String url, Type type) {
+	public <T> T sendAndReceive(String url, Class<T> dataClass) {
 		// simple HTTP client without error handling, e.g. retry or timeout
 		HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory((HttpRequest request) -> {
 			request.setParser(new JsonObjectParser(JSON_FACTORY));
 		});
 		HttpRequest request = requestFactory.buildGetRequest(new GenericUrl(url));
-		return request.execute().parseAs(type);
+		return request.execute().parseAs(dataClass);
 	}
 
 	@SneakyThrows
-	public static String sendAndReceive(String url) {
+	public String sendAndReceive(String url) {
 		// simple HTTP client without error handling, e.g. retry or timeout
 		HttpRequestFactory requestFactory = HTTP_TRANSPORT.createRequestFactory();
 		HttpRequest request = requestFactory.buildGetRequest(new GenericUrl(url));

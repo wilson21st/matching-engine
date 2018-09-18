@@ -1,13 +1,13 @@
-package service.model;
+package com.wilson.model;
 
 import java.util.List;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.google.api.client.util.Key;
+import com.wilson.util.DoubleToStringSerializer;
 
 import lombok.Getter;
 import lombok.Setter;
-import service.util.DoubleToStringSerializer;
 
 @Setter
 @Getter

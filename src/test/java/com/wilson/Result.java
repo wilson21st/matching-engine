@@ -1,4 +1,4 @@
-package performance;
+package com.wilson;
 
 import lombok.Data;
 

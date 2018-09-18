@@ -1,4 +1,4 @@
-package service.model;
+package com.wilson.model;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -8,9 +8,9 @@ import lombok.Setter;
 public class Result {
 	
 	private Job job;
-	private double distance;
+	private long distance;
 	
-	public Result(Job job, double distance) {
+	public Result(Job job, long distance) {
 		this.job = job;
 		this.distance = distance;
 	}

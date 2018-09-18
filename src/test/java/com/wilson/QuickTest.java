@@ -1,22 +1,23 @@
-package performance;
+package com.wilson;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.atomic.LongAdder;
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.wilson.util.HttpGetJson;
 
 import lombok.SneakyThrows;
-import service.util.HttpGetJson;
 
 public class QuickTest {
 
-	private final LongAdder totalCount = new LongAdder();
-	private static final int MAX_RETRY = 2;
+	private final AtomicLong totalCount = new AtomicLong();
+	private static final int MAX_RETRY = 1;
 
 	public static void main(String[] args) {
 
 		List<Task> tasks = new ArrayList<>();
-		for (int i = 0; i < 50000; i++) {
+		for (int i = 0; i < 500000; i++) {
 			int id = new Random().nextInt(50);
 			String url = String.format("http://localhost:8080/api/workers/%d/jobs", id);
 			tasks.add(new Task(url));
@@ -33,7 +34,7 @@ public class QuickTest {
 			do {
 				Result result = new Result();
 				try {
-					String json = HttpGetJson.sendAndReceive(task.getUrl());
+					String json = new HttpGetJson().sendAndReceive(task.getUrl());
 					result.setResponse(json);
 				} catch (Exception e) {
 					result.setException(true);
@@ -54,11 +55,8 @@ public class QuickTest {
 	}
 
 	private void record(Task task, Result result) {
-		synchronized (totalCount) {
-			totalCount.increment();
-			String retry = task.isRetry() ? String.format(" retry=%d", task.getRetryNumber()) : "";
-			System.out.println(String.format("id=%-6d time=%d%s url=%s response=%s", totalCount.longValue(),
-					result.getTimer().getTime(), retry, task.getUrl(), result.getResponse()));
-		}
+		String retry = task.isRetry() ? String.format(" retry=%d", task.getRetryNumber()) : "";
+		System.out.println(String.format("#%-6d time=%d%s url=%s response=%s", totalCount.incrementAndGet(),
+				result.getTimer().getTime(), retry, task.getUrl(), result.getResponse()));
 	}
 }
