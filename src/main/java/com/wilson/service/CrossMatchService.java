@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 import com.wilson.model.Job;
 import com.wilson.model.Result;
 import com.wilson.model.Worker;
-import com.wilson.util.ComparatorBuilder;
+import com.wilson.util.ComparatorFactory;
 import com.wilson.util.Distance;
 
 @Service
@@ -25,9 +25,6 @@ public class CrossMatchService {
 
 	@Autowired
 	private DataCacheService dataCacheService;
-
-	@Autowired
-	private ComparatorBuilder<Result> comparatorBuilder;
 
 	// define thread pool
 	private final ForkJoinPool fastMatchPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 2);
@@ -79,7 +76,7 @@ public class CrossMatchService {
 		// sort results then apply limit
 		return results
 				.stream()
-				.sorted(comparatorBuilder.build(orderBy))
+				.sorted(ComparatorFactory.build(orderBy))
 				.limit(limit)
 				.collect(Collectors.toList());
 	}

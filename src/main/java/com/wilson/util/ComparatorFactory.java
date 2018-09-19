@@ -4,21 +4,18 @@ import java.beans.PropertyDescriptor;
 import java.lang.reflect.Method;
 import java.util.Comparator;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
-@Component
-public class ComparatorBuilder<T> {
+public class ComparatorFactory {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ComparatorBuilder.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ComparatorFactory.class);
 
 	// parameter: an array of field names
 	// return: a list of joined comparators
-	public Comparator<T> build(String[] fieldNames) {
+	public static <T> Comparator<T> build(String[] fields) {
 		Comparator<T> comparator = null;
-		for (String f : fieldNames) {
+		for (String f : fields) {
 			// descending order if ! is found
 			boolean isReversed = f.contains("!");
 			String fieldName = isReversed ? f.replaceAll("!", "") : f;
@@ -37,13 +34,13 @@ public class ComparatorBuilder<T> {
 	}
 
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	private Comparator<T> getComparator(String fieldName) {
+	private static <T> Comparator<T> getComparator(String field) {
 		return (o1, o2) -> {
 			try {
 				// retrieve value from getter method if exists
 				// a dot indicates the field is in a nested class
-				Object c1 = invokeGetterMethod(o1, fieldName);
-				Object c2 = invokeGetterMethod(o2, fieldName);
+				Object c1 = invokeGetterMethod(o1, field);
+				Object c2 = invokeGetterMethod(o2, field);
 				if (c1 == null) {
 					return c2 == null ? 0 : Integer.MIN_VALUE;
 				}
@@ -59,24 +56,28 @@ public class ComparatorBuilder<T> {
 		};
 	}
 
-	private Object invokeGetterMethod(Object object, String fieldName) {
+	private static Object invokeGetterMethod(Object object, String field) {
 
 		try {
-			// root: string before dot
-			int idx = fieldName.indexOf(".");
-			String root = idx == -1 ? fieldName : fieldName.substring(0, idx);
 
-			// next: string after dot
-			String next = idx == -1 ? "" : fieldName.substring(idx + 1, fieldName.length());
+			// subfield: string after dot
+			String subField = null;
 
-			PropertyDescriptor propertyDescriptor = new PropertyDescriptor(root, object.getClass());
+			int idx = field.indexOf(".");
+			if (idx != -1) {
+				subField = field.substring(idx + 1, field.length());
+				// extract string before dot
+				field = field.substring(0, idx);
+			}
+
+			PropertyDescriptor propertyDescriptor = new PropertyDescriptor(field, object.getClass());
 			Method getter = propertyDescriptor.getReadMethod();
 
 			if (getter != null) {
 				Object value = getter.invoke(object);
-				if (value != null && !StringUtils.isEmpty(next)) {
+				if (value != null && subField != null) {
 					// recursively called if nested object is found
-					return invokeGetterMethod(value, next);
+					return invokeGetterMethod(value, subField);
 				}
 				return value;
 			}

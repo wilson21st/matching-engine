@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.TaskScheduler;
@@ -17,10 +16,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.wilson.model.Job;
 import com.wilson.model.Worker;
-import com.wilson.util.HttpGetJson;
 
 @Service
 @Configuration
@@ -35,8 +34,7 @@ public class DataCacheService {
 	private final Map<Long, Worker> workers = new ConcurrentHashMap<>();
 	private final Set<Job> jobs = ConcurrentHashMap.newKeySet();
 
-	@Autowired
-	HttpGetJson httpGetJson;
+	private final RestTemplate restTemplate = new RestTemplate();
 
 	public Worker getWorker(long userId) {
 		return workers.get(userId);
@@ -57,7 +55,7 @@ public class DataCacheService {
 		try {
 
 			// synchronous API request to get all workers
-			Worker[] newWorkers = httpGetJson.sendAndReceive(API_GET_WORKERS, Worker[].class);
+			Worker[] newWorkers = restTemplate.getForObject(API_GET_WORKERS, Worker[].class);
 			// map them to a temporary map
 			Map<Long, Worker> tempWorkers = Arrays
 					.stream(newWorkers)
@@ -68,7 +66,7 @@ public class DataCacheService {
 			LOGGER.info("Workers fetched: size={}", workers.size());
 
 			// synchronous API request to get all jobs
-			Job[] newJobs = httpGetJson.sendAndReceive(API_GET_JOBS, Job[].class);
+			Job[] newJobs = restTemplate.getForObject(API_GET_JOBS, Job[].class);
 			jobs.clear();
 			jobs.addAll(Arrays.asList(newJobs));
 			LOGGER.info("Jobs fetched: size={}", jobs.size());
