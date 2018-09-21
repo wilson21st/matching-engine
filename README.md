@@ -2,16 +2,17 @@
 
 * Built on Spring Boot 2.0.3
 * Java 8 Eclipse Jee Photon with Maven
-* RESTful GET API defined
+* RESTful GET API defined:
 
-**/api/workers/{userId}/jobs?limit=3**
+**/api/workers/{userId}/jobs?limit={limit}**
 
 where:
-    * url: /api/workers/{userId}/jobs
-    * limit
-        * The maximum number of the jobs returned. Default is 3
 
-* It returns an JSON array of each a Job object
+    * path: /api/workers/{userId}/jobs
+    * query: 
+        * limit: Optional. The maximum number of jobs returned. Default is 3
+
+* It returns JSON array of each a Job object
 * It loads / reloads workers and jobs every 60s from the API provided - data are kept in local memory
 
 # Response
