@@ -21,7 +21,7 @@ public class Worker {
 		private double latitude;
 		private long maxJobDistance;
 	}
-	
+
 	private long userId;
 	private List<String> certificates;
 	private boolean hasDriversLicense;

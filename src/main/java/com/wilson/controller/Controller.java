@@ -1,6 +1,8 @@
 package com.wilson.controller;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.wilson.model.Result;
+import com.wilson.model.Job;
 import com.wilson.service.CrossMatchService;
 
 @RestController
@@ -20,14 +22,17 @@ public class Controller {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 
 	@Autowired
+	Executor asyncExecutor;
+
+	@Autowired
 	CrossMatchService crossMatchService;
 
 	@RequestMapping("/{userId}/jobs")
-	public List<Result> getJobs(@PathVariable("userId") long userId,
-			@RequestParam(value = "orderBy", defaultValue = "!job.billRate,distance,job.startDate") String[] orderBy,
+	public CompletableFuture<List<Job>> getJobs(@PathVariable("userId") long userId,
 			@RequestParam(value = "limit", defaultValue = "3") int limit) {
 
-		LOGGER.debug("getJobs: userId={} orderBy={} limit={}", userId, orderBy, limit);
-		return crossMatchService.crossMatch(userId, orderBy, limit);
+		LOGGER.debug("getJobs: userId={} limit={}", userId, limit);
+
+		return CompletableFuture.supplyAsync(() -> crossMatchService.crossMatch(userId, limit), asyncExecutor);
 	}
 }

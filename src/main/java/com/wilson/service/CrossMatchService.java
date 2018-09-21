@@ -3,8 +3,6 @@ package com.wilson.service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ForkJoinPool;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -13,10 +11,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.wilson.model.Job;
-import com.wilson.model.Result;
 import com.wilson.model.Worker;
-import com.wilson.util.ComparatorFactory;
 import com.wilson.util.Distance;
+
+import lombok.SneakyThrows;
 
 @Service
 public class CrossMatchService {
@@ -26,58 +24,50 @@ public class CrossMatchService {
 	@Autowired
 	private DataCacheService dataCacheService;
 
-	// define thread pool
-	private final ForkJoinPool fastMatchPool = new ForkJoinPool(Runtime.getRuntime().availableProcessors() * 2);
-
-	public List<Result> crossMatch(long userId, String[] orderBy, int limit) {
+	@SneakyThrows
+	public List<Job> crossMatch(long userId, int limit) {
 
 		Worker worker = dataCacheService.getWorker(userId);
 
-		if (worker == null) {
-			return new ArrayList<>();
+		if (worker != null) {
+
+			Set<Job> jobs = dataCacheService.getJobs();
+
+			try {
+
+				return jobs
+						.stream()
+						.filter(job -> {
+
+							boolean checkCertificates = worker.getCertificates().containsAll(job.getRequiredCertificates());
+							boolean checkLicense = !job.isDriverLicenseRequired() || worker.isHasDriversLicense();
+
+							// a job will be selected if the following conditions are met:
+							// certificates, driver license and distance
+
+							if (checkCertificates && checkLicense) {
+		
+								long distance = Distance.calculate(worker.getJobSearchAddress().getLatitude(),
+										worker.getJobSearchAddress().getLongitude(), job.getLocation().getLatitude(),
+										job.getLocation().getLongitude());
+
+								if (distance <= worker.getJobSearchAddress().getMaxJobDistance()) {
+									return true;
+								}
+							}
+
+							// not selected
+							return false; })
+
+						.limit(limit)
+						.collect(Collectors.toList());
+
+			} catch (Exception e) {
+
+				LOGGER.warn("Exception: ", e);
+			}
 		}
 
-		Set<Job> jobs = dataCacheService.getJobs();
-		Set<Result> results = ConcurrentHashMap.newKeySet();
-
-		try {
-			fastMatchPool.submit(() -> {
-
-				jobs.parallelStream().forEach(job -> {
-
-					try {
-
-						long distance = Distance.calculate(worker.getJobSearchAddress().getLatitude(),
-								worker.getJobSearchAddress().getLongitude(), job.getLocation().getLatitude(),
-								job.getLocation().getLongitude());
-
-						// a job will be selected if the following criteria are met:
-						// certificates, driver license and distance
-						boolean checkCertificates = worker.getCertificates().containsAll(job.getRequiredCertificates());
-						boolean checkLicense = !job.isDriverLicenseRequired() || worker.isHasDriversLicense();
-						boolean checkDistance = distance <= worker.getJobSearchAddress().getMaxJobDistance();
-
-						if (checkCertificates && checkLicense && checkDistance) {
-							results.add(new Result(job, distance));
-						}
-
-					} catch (Exception e) {
-
-						LOGGER.warn("Exception: ", e);
-					}
-				});
-			}).get();
-
-		} catch (Exception e) {
-
-			LOGGER.warn("Exception: ", e);
-		}
-
-		// sort results then apply limit
-		return results
-				.stream()
-				.sorted(ComparatorFactory.build(orderBy))
-				.limit(limit)
-				.collect(Collectors.toList());
+		return new ArrayList<>();
 	}
 }

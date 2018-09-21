@@ -9,32 +9,28 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.TaskScheduler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.wilson.config.AppConfig;
 import com.wilson.model.Job;
 import com.wilson.model.Worker;
 
 @Service
-@Configuration
 @EnableScheduling
 public class DataCacheService {
-
-	private static final String API_GET_WORKERS = "http://test.swipejobs.com/api/workers";
-	private static final String API_GET_JOBS = "http://test.swipejobs.com/api/jobs";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DataCacheService.class);
 
 	private final Map<Long, Worker> workers = new ConcurrentHashMap<>();
 	private final Set<Job> jobs = ConcurrentHashMap.newKeySet();
-
 	private final RestTemplate restTemplate = new RestTemplate();
+
+	@Autowired
+	private AppConfig appConfig;
 
 	public Worker getWorker(long userId) {
 		return workers.get(userId);
@@ -44,36 +40,32 @@ public class DataCacheService {
 		return jobs;
 	}
 
-	@Bean
-	public TaskScheduler taskScheduler() {
-		return new ConcurrentTaskScheduler();
-	}
+	@Scheduled(fixedDelayString = "${fixeddelay.in.milliseconds}")
+	private void syncAll() {
 
-	@Scheduled(fixedDelay = 60000)
-	private void synchronize() {
-
+		// Synchronous API requests to synchronize workers & jobs
 		try {
-
-			// synchronous API request to get all workers
-			Worker[] newWorkers = restTemplate.getForObject(API_GET_WORKERS, Worker[].class);
-			// map them to a temporary map
-			Map<Long, Worker> tempWorkers = Arrays
-					.stream(newWorkers)
-					.parallel()
+			Worker[] newWorkers = restTemplate.getForObject(appConfig.getWorkersUrl(), Worker[].class);
+			// Map them to a temporary map before applied to the shared concurrent map
+			Map<Long, Worker> tempWorkers = Arrays.stream(newWorkers)
 					.collect(Collectors.toMap(Worker::getUserId, Function.identity()));
-			workers.clear();
-			workers.putAll(tempWorkers);
-			LOGGER.info("Workers fetched: size={}", workers.size());
+			// Keep the cache data if no workers retrieved
+			if (!tempWorkers.isEmpty()) {
+				workers.clear();
+				workers.putAll(tempWorkers);
+			}
 
-			// synchronous API request to get all jobs
-			Job[] newJobs = restTemplate.getForObject(API_GET_JOBS, Job[].class);
-			jobs.clear();
-			jobs.addAll(Arrays.asList(newJobs));
-			LOGGER.info("Jobs fetched: size={}", jobs.size());
+			Job[] newJobs = restTemplate.getForObject(appConfig.getJobsUrl(), Job[].class);
+			// Keep the cache data if no jobs retrieved
+			if (newJobs.length != 0) {
+				jobs.clear();
+				jobs.addAll(Arrays.asList(newJobs));
+			}
 
 		} catch (Exception e) {
-
 			LOGGER.warn("Exception: ", e);
 		}
+
+		LOGGER.info("Sync completed: workers={} jobs={}", workers.size(), jobs.size());
 	}
 }

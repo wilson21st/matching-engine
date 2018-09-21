@@ -10,11 +10,12 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class Job {
+public class Job implements Cloneable {
 
 	@Setter
 	@Getter
 	public static class Location {
+
 		@JsonSerialize(using = DoubleToStringSerializer.class)
 		private double longitude;
 		@JsonSerialize(using = DoubleToStringSerializer.class)
@@ -32,4 +33,12 @@ public class Job {
 	private String company;
 	private String guid;
 	private long jobId;
+
+	public Job clone() {
+		try {
+			return (Job) super.clone();
+		} catch (CloneNotSupportedException e) {
+			return null;
+		}
+	}
 }
